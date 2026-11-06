@@ -1,0 +1,451 @@
+* {
+  box-sizing: border-box;
+}
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: linear-gradient(120deg, #f4f7ff, #e3efff);
+  font-family: Inter, "Segoe UI", sans-serif;
+  color: #111b42;
+}
+
+.auth-card {
+  position: relative;
+  width: min(1100px, 100%);
+  min-height: 560px;
+  overflow: hidden;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 24px 65px rgba(24, 88, 180, 0.18);
+}
+
+/* White form area */
+.auth-forms {
+  position: absolute;
+  inset: 0 0 0 42%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  background: #fff;
+  transition:
+    left 650ms cubic-bezier(0.22, 1, 0.36, 1),
+    right 650ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.signup-mode .auth-forms {
+  left: 0;
+  right: 42%;
+}
+
+/* Authentication forms */
+.auth-form {
+  position: absolute;
+  width: min(100%, 390px);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  opacity: 1;
+  transform: translateX(0);
+  transition:
+    opacity 350ms ease,
+    transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.auth-form h1 {
+  margin: 0 0 12px;
+  font-size: 34px;
+  font-weight: 750;
+  letter-spacing: -1px;
+}
+
+.auth-form > input {
+  width: 100%;
+  height: 54px;
+  padding: 0 17px;
+  border: 1px solid #dce3f0;
+  border-radius: 9px;
+  outline: none;
+  background: #fbfcff;
+  color: #111b42;
+  font: inherit;
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.auth-form > input:focus {
+  border-color: #1673f9;
+  box-shadow: 0 0 0 3px rgba(22, 115, 249, 0.12);
+}
+
+.auth-form > input::placeholder {
+  color: #8994b0;
+}
+
+/* Login form: visible by default */
+.login-form {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+}
+
+/* Sign Up form: starts to the left */
+.signup-form {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-110%);
+}
+
+/* Login exits to the right */
+.signup-mode .login-form {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(110%);
+}
+
+/* Sign Up enters from the left */
+.signup-mode .signup-form {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+}
+
+/* Login form options */
+.form-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.form-options label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.form-options input {
+  accent-color: #0866f5;
+}
+
+.text-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #0866f5;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Form submit button */
+.submit-button {
+  width: 100%;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: none;
+  border-radius: 9px;
+  background: linear-gradient(100deg, #0866f5, #087cff);
+  color: #fff;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    background 200ms ease,
+    transform 200ms ease;
+}
+
+.submit-button:hover {
+  background: #0758d7;
+  transform: translateY(-2px);
+}
+
+/* Blue curved panel */
+.auth-panel {
+  position: absolute;
+  z-index: 2;
+  inset: 0 auto 0 0;
+  width: 42%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 42px;
+  overflow: hidden;
+  border-radius: 0 48% 48% 0 / 0 50% 50% 0;
+  background: linear-gradient(135deg, #0754ed, #087cff 65%, #36a6ff);
+  transition:
+    left 650ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-radius 650ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.auth-panel::before {
+  position: absolute;
+  content: "";
+  width: 440px;
+  height: 440px;
+  top: -150px;
+  left: -120px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  pointer-events: none;
+}
+
+.auth-panel::after {
+  position: absolute;
+  content: "";
+  width: 440px;
+  height: 440px;
+  bottom: -310px;
+  left: -110px;
+  border-radius: 50%;
+  background: rgba(0, 30, 150, 0.12);
+  pointer-events: none;
+}
+
+/* Branding */
+.brand {
+  position: absolute;
+  z-index: 3;
+  top: 32px;
+  left: 32px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  font-size: 23px;
+  font-weight: 750;
+  white-space: nowrap;
+  transition:
+    left 650ms cubic-bezier(0.22, 1, 0.36, 1),
+    right 650ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.brand-light {
+  font-weight: 400;
+}
+
+.brand-icon {
+  font-size: 35px;
+}
+
+/* Move logo to the right when Sign Up is active */
+.signup-mode .brand {
+  left: auto;
+  right: 32px;
+}
+
+/* Circular Sign Up / Sign In button */
+.panel-button {
+  position: relative;
+  z-index: 3;
+  width: 120px;
+  height: 120px;
+  min-height: 120px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  border-radius: 50%;
+  background: transparent;
+  color: #fff;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    background 200ms ease,
+    transform 200ms ease;
+}
+
+.panel-button:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: scale(1.05);
+}
+
+/* Sign Up: move blue panel to the right */
+.signup-mode .auth-panel {
+  left: 58%;
+  border-radius: 48% 0 0 48% / 50% 0 0 50%;
+}
+
+/* Mobile layout */
+@media (max-width: 760px) {
+  .auth-page {
+    padding: 18px;
+  }
+
+  .auth-card {
+    min-height: 680px;
+  }
+
+  .auth-panel {
+    width: 100%;
+    height: 155px;
+    inset: 0 0 auto 0;
+    padding: 20px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: 0 0 42% 12% / 0 0 25% 15%;
+  }
+
+  .brand {
+    top: 50%;
+    left: 20px;
+    right: auto;
+    transform: translateY(-50%);
+    font-size: 19px;
+  }
+
+  .brand-icon {
+    font-size: 28px;
+  }
+
+  .signup-mode .brand {
+    left: 20px;
+    right: auto;
+  }
+
+  .panel-button {
+    width: 76px;
+    height: 76px;
+    min-height: 76px;
+    min-width: 76px;
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  .auth-forms {
+    inset: 0;
+    width: 100%;
+    padding: 190px 24px 32px;
+    align-items: flex-start;
+    transition: none;
+  }
+
+  .auth-form {
+    top: 185px;
+    width: calc(100% - 48px);
+  }
+
+  .auth-form h1 {
+    font-size: 29px;
+  }
+
+  .signup-mode .auth-panel {
+    left: 0;
+    top: auto;
+    bottom: 0;
+    border-radius: 42% 12% 0 0 / 25% 15% 0 0;
+  }
+
+  .signup-mode .auth-forms {
+    left: 0;
+    right: 0;
+    padding: 35px 24px 190px;
+  }
+
+  .signup-mode .auth-form {
+    top: 28px;
+  }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .auth-panel,
+  .auth-form,
+  .submit-button,
+  .panel-button,
+  .brand {
+    transition: none;
+  }
+}
+
+/* Password input with eye toggle */
+.password-field {
+  position: relative;
+  width: 100%;
+}
+
+.password-field > input {
+  width: 100%;
+  height: 54px;
+  padding: 0 48px 0 17px;
+  border: 1px solid #dce3f0;
+  border-radius: 9px;
+  outline: none;
+  background: #fbfcff;
+  color: #111b42;
+  font: inherit;
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.password-field > input:focus {
+  border-color: #1673f9;
+  box-shadow: 0 0 0 3px rgba(22, 115, 249, 0.12);
+}
+
+.password-field > input::placeholder {
+  color: #8994b0;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  color: #8994b0;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.password-toggle:hover {
+  color: #0866f5;
+}
+
+.password-toggle:focus-visible {
+  outline: 2px solid #1673f9;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Authentication feedback messages */
+.auth-message {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.auth-message.success {
+  color: #15803d;
+}
+
+.auth-message.error {
+  color: #dc2626;
+}
+
+/* Disabled buttons while a request is processing */
+.submit-button:disabled,
+.panel-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}

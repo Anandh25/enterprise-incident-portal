@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import {
   createIncident,
   getIncidents,
+  getIncidentById,
+  getAssignedIncidents,
   updateIncidentStatus,
   assignIncident,
   getOverdueIncidents,
@@ -109,10 +111,44 @@ const getAll = async (req: Request, res: Response) => {
   }
 };
 
+const getById = async (req: Request, res: Response) => {
+  try {
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+    const incident = await getIncidentById(id);
+
+    if (!incident) {
+      return res.status(404).json({
+        success: false,
+        message: "Incident not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: incident,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: true,
+      message: "Failed to fetch incident",
+    });
+  }
+};
+
 const updateStatus = async (req: Request, res: Response) => {
   try {
     const { status } = req.body;
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+    const { role } = res.locals.user;
+
+    if (role !== "admin" && role !== "support_agent") {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to update incident status",
+      });
+    }
 
     const validStatuses = [
       "open",
@@ -193,6 +229,32 @@ const assign = async (req: Request, res: Response) => {
   }
 };
 
+const getMyAssignments = async (_req: Request, res: Response) => {
+  try {
+    const { userId, role } = res.locals.user;
+
+    if (role !== "admin" && role !== "support_agent") {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to view assignments",
+      });
+    }
+
+    const incidents = await getAssignedIncidents(userId, role);
+
+    return res.status(200).json({
+      success: true,
+      count: incidents.length,
+      data: incidents,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch assigned incidents",
+    });
+  }
+};
+
 const getOverdue = async (req: Request, res: Response) => {
   try {
     const incidents = await getOverdueIncidents();
@@ -229,4 +291,13 @@ const getDashboard = async (_req: Request, res: Response) => {
   }
 };
 
-export { create, getAll, updateStatus, assign, getOverdue, getDashboard };
+export {
+  create,
+  getAll,
+  getById,
+  updateStatus,
+  assign,
+  getMyAssignments,
+  getOverdue,
+  getDashboard,
+};

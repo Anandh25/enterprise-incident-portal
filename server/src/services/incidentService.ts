@@ -73,6 +73,14 @@ const getIncidents = async (
   return { incidents, total };
 };
 
+const getIncidentById = async (incidentId: string) => {
+  const incident = await Incident.findById(incidentId)
+    .populate("createdBy", "name email")
+    .populate("assignedTo", "name email");
+
+  return incident;
+};
+
 const updateIncidentStatus = async (
   incidentId: string,
   status: "open" | "in_progress" | "pending" | "resolved" | "closed",
@@ -129,6 +137,26 @@ const assignIncident = async (
   return incident;
 };
 
+const getAssignedIncidents = async (
+  userId: string,
+  role: "admin" | "support_agent",
+) => {
+  const filter: Record<string, unknown> = {
+    assignedTo: { $ne: null },
+  };
+
+  if (role === "support_agent") {
+    filter.assignedTo = userId;
+  }
+
+  const incidents = await Incident.find(filter)
+    .populate("createdBy", "name email")
+    .populate("assignedTo", "name email")
+    .sort({ createdAt: -1 });
+
+  return incidents;
+};
+
 const getOverdueIncidents = async () => {
   const now = new Date();
 
@@ -166,6 +194,8 @@ const getDashboardSummary = async () => {
 export {
   createIncident,
   getIncidents,
+  getIncidentById,
+  getAssignedIncidents,
   updateIncidentStatus,
   assignIncident,
   getOverdueIncidents,

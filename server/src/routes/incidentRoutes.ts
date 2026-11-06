@@ -2,8 +2,10 @@ import express from "express";
 import {
   create,
   getAll,
+  getById,
   updateStatus,
   assign,
+  getMyAssignments,
   getOverdue,
   getDashboard,
 } from "../controllers/incidentController";
@@ -14,30 +16,16 @@ import { getAuditLogs } from "../controllers/auditLogController";
 
 const router = express.Router();
 
+// Create and list incidents
 router.post("/", protect, create);
 router.get("/", protect, getAll);
 
-router.patch(
-  "/:id",
-  protect,
-  allowRoles("admin", "support_agent"),
-  updateStatus,
-);
-
-router.patch(
-  "/:id/assign",
-  protect,
-  allowRoles("admin", "support_agent"),
-  assign,
-);
-
-router.post("/:id/comments", protect, addComment);
-router.get("/:id/comments", protect, getComments);
+// Specific GET routes must come before /:id
 router.get(
-  "/:id/audit-logs",
+  "/my-assignments",
   protect,
   allowRoles("admin", "support_agent"),
-  getAuditLogs,
+  getMyAssignments,
 );
 
 router.get(
@@ -47,10 +35,37 @@ router.get(
   getOverdue,
 );
 
-router.get(
-  "/dashboard/summary",
+router.get("/dashboard/summary", protect, getDashboard);
+
+// Fetch a single incident
+router.get("/:id", protect, getById);
+
+// Update incident status
+router.patch(
+  "/:id",
   protect,
   allowRoles("admin", "support_agent"),
-  getDashboard,
+  updateStatus,
 );
+
+// Assign incident
+router.patch(
+  "/:id/assign",
+  protect,
+  allowRoles("admin", "support_agent"),
+  assign,
+);
+
+// Comments
+router.post("/:id/comments", protect, addComment);
+router.get("/:id/comments", protect, getComments);
+
+// Audit logs
+router.get(
+  "/:id/audit-logs",
+  protect,
+  allowRoles("admin", "support_agent"),
+  getAuditLogs,
+);
+
 export default router;

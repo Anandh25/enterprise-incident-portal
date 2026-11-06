@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User";
+import crypto from "crypto";
 
 const registerUser = async (name: string, email: string, password: string) => {
   const existingUser = await User.findOne({ email });
@@ -39,6 +40,15 @@ const loginUser = async (email: string, password: string) => {
   }
 
   const jwtSecret = process.env.JWT_SECRET;
+
+  console.log(
+    "Login JWT fingerprint:",
+    crypto
+      .createHash("sha256")
+      .update(jwtSecret || "")
+      .digest("hex")
+      .slice(0, 8),
+  );
 
   if (!jwtSecret) {
     throw new Error("JWT_SECRET is not defined");

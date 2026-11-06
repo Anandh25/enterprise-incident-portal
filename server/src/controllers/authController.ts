@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { loginUser, registerUser } from "../services/authService";
+import User from "../models/User";
 
 const register = async (req: Request, res: Response) => {
   try {
@@ -53,10 +54,26 @@ const login = async (req: Request, res: Response) => {
   }
 };
 
-const getMe = (req: Request, res: Response) => {
+const getMe = async (req: Request, res: Response) => {
+  const userId = res.locals.user.userId;
+
+  const user = await User.findById(userId).select("name email role");
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: "User not found",
+    });
+  }
+
   return res.status(200).json({
     success: true,
-    data: res.locals.user,
+    data: {
+      userId: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
   });
 };
 
