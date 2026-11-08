@@ -237,7 +237,7 @@
 }
 
 /* Move logo to the right when Sign Up is active */
-.signup-mode .brand {
+.signup-mode .auth-brand {
   left: auto;
   right: 32px;
 }
@@ -299,7 +299,7 @@
     border-radius: 0 0 42% 12% / 0 0 25% 15%;
   }
 
-  .brand {
+  .auth-brand {
     top: 50%;
     left: 20px;
     right: auto;
@@ -311,7 +311,7 @@
     font-size: 28px;
   }
 
-  .signup-mode .brand {
+  .signup-mode .auth-brand {
     left: 20px;
     right: auto;
   }
@@ -366,7 +366,7 @@
   .auth-form,
   .submit-button,
   .panel-button,
-  .brand {
+  .auth-brand {
     transition: none;
   }
 }
