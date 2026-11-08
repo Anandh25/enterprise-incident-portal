@@ -140,7 +140,7 @@ function AuthPage({ onLoginSuccess }: AuthPageProps) {
       <section className="auth-card">
         {/* Curved blue panel */}
         <div className="auth-panel">
-          <div className="brand">
+          <div className="auth-brand">
             <span className="brand-icon">⬡</span>
             <span>
               Incident<span className="brand-light">Portal</span>

@@ -211,7 +211,7 @@
 }
 
 /* Branding */
-.brand {
+.auth-brand {
   position: absolute;
   z-index: 3;
   top: 32px;

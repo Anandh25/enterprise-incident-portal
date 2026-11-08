@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import crypto from "crypto";
 
 interface JwtPayload {
   userId: string;
@@ -19,14 +18,6 @@ const protect = (req: Request, res: Response, next: NextFunction) => {
 
   const token = authHeader.split(" ")[1];
   const jwtSecret = process.env.JWT_SECRET;
-  console.log(
-    "Middleware JWT fingerprint:",
-    crypto
-      .createHash("sha256")
-      .update(jwtSecret || "")
-      .digest("hex")
-      .slice(0, 8),
-  );
 
   if (!jwtSecret) {
     return res.status(500).json({

@@ -115,7 +115,9 @@ const getById = async (req: Request, res: Response) => {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
-    const incident = await getIncidentById(id);
+    const { userId, role } = res.locals.user;
+
+    const incident = await getIncidentById(id, userId, role);
 
     if (!incident) {
       return res.status(404).json({
@@ -200,7 +202,14 @@ const assign = async (req: Request, res: Response) => {
         message: "Support agent ID is required",
       });
     }
+    const { role } = res.locals.user;
 
+    if (role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admins can assign incidents",
+      });
+    }
     const performedBy = res.locals.user.userId;
 
     const incident = await assignIncident(id, assignedTo, performedBy);
@@ -255,9 +264,11 @@ const getMyAssignments = async (_req: Request, res: Response) => {
   }
 };
 
-const getOverdue = async (req: Request, res: Response) => {
+const getOverdue = async (_req: Request, res: Response) => {
   try {
-    const incidents = await getOverdueIncidents();
+    const { userId, role } = res.locals.user;
+
+    const incidents = await getOverdueIncidents(userId, role);
 
     return res.status(200).json({
       success: true,
@@ -265,21 +276,20 @@ const getOverdue = async (req: Request, res: Response) => {
       data: incidents,
     });
   } catch (error) {
-    return res.status(400).json({
+    return res.status(500).json({
       success: false,
-      message:
-        error instanceof Error
-          ? error.message
-          : "Failed to fetch overdue incidents",
+      message: "Failed to fetch overdue incidents",
     });
   }
 };
 
 const getDashboard = async (_req: Request, res: Response) => {
   try {
-    const summary = await getDashboardSummary();
+    const { userId, role } = res.locals.user;
 
-    res.status(200).json({
+    const summary = await getDashboardSummary(userId, role);
+
+    return res.status(200).json({
       success: true,
       data: summary,
     });

@@ -11,7 +11,11 @@ import {
 } from "../controllers/incidentController";
 import protect from "../middleware/authMiddleware";
 import allowRoles from "../middleware/roleMiddleware";
-import { addComment, getComments } from "../controllers/commentController";
+import {
+  addComment,
+  editComment,
+  getComments,
+} from "../controllers/commentController";
 import { getAuditLogs } from "../controllers/auditLogController";
 
 const router = express.Router();
@@ -28,12 +32,7 @@ router.get(
   getMyAssignments,
 );
 
-router.get(
-  "/overdue",
-  protect,
-  allowRoles("admin", "support_agent"),
-  getOverdue,
-);
+router.get("/overdue", protect, getOverdue);
 
 router.get("/dashboard/summary", protect, getDashboard);
 
@@ -49,23 +48,14 @@ router.patch(
 );
 
 // Assign incident
-router.patch(
-  "/:id/assign",
-  protect,
-  allowRoles("admin", "support_agent"),
-  assign,
-);
+router.patch("/:id/assign", protect, allowRoles("admin"), assign);
 
 // Comments
 router.post("/:id/comments", protect, addComment);
 router.get("/:id/comments", protect, getComments);
+router.patch("/:id/comments/:commentId", protect, editComment);
 
 // Audit logs
-router.get(
-  "/:id/audit-logs",
-  protect,
-  allowRoles("admin", "support_agent"),
-  getAuditLogs,
-);
+router.get("/:id/audit-logs", protect, getAuditLogs);
 
 export default router;

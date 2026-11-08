@@ -73,8 +73,20 @@ const getIncidents = async (
   return { incidents, total };
 };
 
-const getIncidentById = async (incidentId: string) => {
-  const incident = await Incident.findById(incidentId)
+const getIncidentById = async (
+  incidentId: string,
+  userId: string,
+  role: "admin" | "support_agent" | "employee",
+) => {
+  const filter: Record<string, unknown> = {
+    _id: incidentId,
+  };
+
+  if (role === "employee") {
+    filter.createdBy = userId;
+  }
+
+  const incident = await Incident.findOne(filter)
     .populate("createdBy", "name email")
     .populate("assignedTo", "name email");
 
@@ -157,26 +169,56 @@ const getAssignedIncidents = async (
   return incidents;
 };
 
-const getOverdueIncidents = async () => {
+const getOverdueIncidents = async (
+  userId: string,
+  role: "admin" | "support_agent" | "employee",
+) => {
   const now = new Date();
 
-  const incidents = await Incident.find({
+  const filter: Record<string, unknown> = {
     dueDate: { $lt: now },
     status: { $nin: ["resolved", "closed"] },
-  }).sort({ dueDate: 1 });
+  };
+
+  if (role === "employee") {
+    filter.createdBy = userId;
+  }
+
+  if (role === "support_agent") {
+    filter.assignedTo = userId;
+  }
+
+  const incidents = await Incident.find(filter)
+    .populate("createdBy", "name email")
+    .populate("assignedTo", "name email")
+    .sort({ dueDate: 1 });
 
   return incidents;
 };
 
-const getDashboardSummary = async () => {
+const getDashboardSummary = async (
+  userId: string,
+  role: "admin" | "support_agent" | "employee",
+) => {
   const now = new Date();
 
+  const filter: Record<string, unknown> = {};
+
+  if (role === "employee") {
+    filter.createdBy = userId;
+  }
+
+  if (role === "support_agent") {
+    filter.assignedTo = userId;
+  }
+
   const [total, open, inProgress, resolved, overdue] = await Promise.all([
-    Incident.countDocuments(),
-    Incident.countDocuments({ status: "open" }),
-    Incident.countDocuments({ status: "in_progress" }),
-    Incident.countDocuments({ status: "resolved" }),
+    Incident.countDocuments(filter),
+    Incident.countDocuments({ ...filter, status: "open" }),
+    Incident.countDocuments({ ...filter, status: "in_progress" }),
+    Incident.countDocuments({ ...filter, status: "resolved" }),
     Incident.countDocuments({
+      ...filter,
       dueDate: { $lt: now },
       status: { $nin: ["resolved", "closed"] },
     }),

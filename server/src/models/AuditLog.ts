@@ -3,7 +3,12 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface IAuditLog extends Document {
   incident: mongoose.Types.ObjectId;
   performedBy: mongoose.Types.ObjectId;
-  action: "created" | "status_updated" | "assigned" | "comment_added";
+  action:
+    | "created"
+    | "status_updated"
+    | "assigned"
+    | "comment_added"
+    | "comment_edited";
   details: string;
 }
 
@@ -21,7 +26,13 @@ const auditLogSchema = new Schema<IAuditLog>(
     },
     action: {
       type: String,
-      enum: ["created", "status_updated", "assigned", "comment_added"],
+      enum: [
+        "created",
+        "status_updated",
+        "assigned",
+        "comment_added",
+        "comment_edited",
+      ],
       required: true,
     },
     details: {

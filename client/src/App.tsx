@@ -7,17 +7,35 @@ import AuthPage from "./AuthPage";
 type Comment = {
   _id: string;
   message: string;
+  originalMessage?: string;
   author: {
+    _id: string;
     name: string;
     email: string;
     role: string;
   };
   createdAt: string;
+  updatedAt: string;
+  editHistory?: {
+    message: string;
+    editedBy: {
+      _id: string;
+      name: string;
+      email: string;
+      role: string;
+    };
+    editedAt: string;
+  }[];
 };
 
 type AuditLog = {
   _id: string;
-  action: "created" | "status_updated" | "assigned" | "comment_added";
+  action:
+    | "created"
+    | "status_updated"
+    | "assigned"
+    | "comment_added"
+    | "comment_edited";
   details: string;
   performedBy: {
     name: string;
@@ -61,18 +79,24 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [assignedIncidents, setAssignedIncidents] = useState<Incident[]>([]);
+  const [overdueIncidents, setOverdueIncidents] = useState<Incident[]>([]);
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(
     null,
   );
   const [comments, setComments] = useState<Comment[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [newComment, setNewComment] = useState("");
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editedCommentMessage, setEditedCommentMessage] = useState("");
+  const [expandedCommentHistory, setExpandedCommentHistory] = useState<
+    string[]
+  >([]);
   const [showAllIncidents, setShowAllIncidents] = useState(false);
   const [showIncidentForm, setShowIncidentForm] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [activePage, setActivePage] = useState<
-    "dashboard" | "incidents" | "assignments" | "settings"
+    "dashboard" | "incidents" | "assignments" | "overdue" | "settings"
   >("dashboard");
   const [category, setCategory] = useState<
     "hardware" | "software" | "network" | "access" | "other"
@@ -84,7 +108,33 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(
     Boolean(localStorage.getItem("token")),
   );
+  const clearUserSessionData = () => {
+    setSummary(null);
+    setError("");
+    setLoading(true);
+
+    setIncidents([]);
+    setAssignedIncidents([]);
+
+    setSelectedIncident(null);
+    setComments([]);
+    setAuditLogs([]);
+    setNewComment("");
+    setEditingCommentId(null);
+    setEditedCommentMessage("");
+    setExpandedCommentHistory([]);
+
+    setCurrentUser(null);
+
+    setActivePage("dashboard");
+    setShowAllIncidents(false);
+    setShowIncidentForm(false);
+  };
   const handleIncidentClick = async (incidentId: string) => {
+    setEditingCommentId(null);
+    setEditedCommentMessage("");
+    setExpandedCommentHistory([]);
+
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
@@ -155,6 +205,74 @@ function App() {
       toast.success("Comment added successfully!");
     } catch {
       setError("Unable to add comment.");
+    }
+  };
+
+  const handleStartEditComment = (comment: Comment) => {
+    setEditingCommentId(comment._id);
+    setEditedCommentMessage(comment.message);
+  };
+
+  const handleCancelEditComment = () => {
+    setEditingCommentId(null);
+    setEditedCommentMessage("");
+  };
+
+  const handleToggleCommentHistory = (commentId: string) => {
+    setExpandedCommentHistory((previous) =>
+      previous.includes(commentId)
+        ? previous.filter((id) => id !== commentId)
+        : [...previous, commentId],
+    );
+  };
+
+  const handleSaveCommentEdit = async (commentId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token || !selectedIncident || !editedCommentMessage.trim()) {
+        toast.error("Comment message is required.");
+        return;
+      }
+
+      await axios.patch(
+        `http://localhost:5000/api/incidents/${selectedIncident._id}/comments/${commentId}`,
+        { message: editedCommentMessage.trim() },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const [commentsResponse, auditResponse] = await Promise.all([
+        axios.get(
+          `http://localhost:5000/api/incidents/${selectedIncident._id}/comments`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        ),
+        axios.get(
+          `http://localhost:5000/api/incidents/${selectedIncident._id}/audit-logs`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        ),
+      ]);
+
+      setComments(commentsResponse.data.data);
+      setAuditLogs(auditResponse.data.data);
+      setEditingCommentId(null);
+      setEditedCommentMessage("");
+      toast.success("Comment updated successfully!");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        toast.error(
+          error.response?.data?.message || "Unable to update comment.",
+        );
+      } else {
+        toast.error("Something went wrong while updating the comment.");
+      }
     }
   };
 
@@ -295,7 +413,16 @@ function App() {
       );
 
       setSummary(response.data.data);
+      const overdueResponse = await axios.get(
+        "http://localhost:5000/api/incidents/overdue",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
 
+      setOverdueIncidents(overdueResponse.data.data);
       const incidentsResponse = await axios.get(
         "http://localhost:5000/api/incidents?limit=100",
         {
@@ -343,7 +470,7 @@ function App() {
         />
         <AuthPage
           onLoginSuccess={() => {
-            setError("");
+            clearUserSessionData();
             setIsAuthenticated(true);
           }}
         />
@@ -381,6 +508,15 @@ function App() {
             All Incidents
           </button>
 
+          <button
+            className={`nav-link ${activePage === "overdue" ? "active" : ""}`}
+            onClick={() => {
+              setSelectedIncident(null);
+              setActivePage("overdue");
+            }}
+          >
+            Overdue Incidents
+          </button>
           {(currentUser?.role === "support_agent" ||
             currentUser?.role === "admin") && (
             <button
@@ -407,6 +543,7 @@ function App() {
           <button
             className="secondary-button"
             onClick={() => {
+              clearUserSessionData();
               localStorage.removeItem("token");
               setIsAuthenticated(false);
             }}
@@ -428,7 +565,9 @@ function App() {
                   ? "All Incidents"
                   : activePage === "assignments"
                     ? "My Assignments"
-                    : "Settings"}
+                    : activePage === "overdue"
+                      ? "Overdue Incidents"
+                      : "Settings"}
             </h1>
 
             <p className="subtitle">
@@ -438,7 +577,9 @@ function App() {
                   ? "View and manage all reported incidents."
                   : activePage === "assignments"
                     ? "Track incidents assigned to you."
-                    : "Manage your account settings."}
+                    : activePage === "overdue"
+                      ? "Track incidents that have exceeded their SLA deadline."
+                      : "Manage your account settings."}
             </p>
           </div>
           <button
@@ -448,30 +589,98 @@ function App() {
             + New Incident
           </button>
         </header>
+
         {selectedIncident && (
-          <section className="content-card">
-            <div className="section-heading">
+          <section className="content-card incident-overview">
+            {/* Incident Header */}
+            <div className="incident-overview-header">
               <div>
+                <p className="eyebrow">INCIDENT DETAILS</p>
                 <h2>{selectedIncident.title}</h2>
-                <p>Incident Details</p>
+                <p>Incident ID: {selectedIncident._id}</p>
               </div>
 
               <button
                 className="secondary-button"
                 onClick={() => setSelectedIncident(null)}
               >
-                Back
+                Back to Incidents
               </button>
             </div>
 
-            <p>{selectedIncident.description}</p>
+            {/* Incident Metadata */}
+            <div className="incident-meta-grid">
+              <div className="incident-meta-item">
+                <span>Priority</span>
+                <strong>
+                  <span
+                    className={`priority-badge ${selectedIncident.priority}`}
+                  >
+                    {selectedIncident.priority}
+                  </span>
+                </strong>
+              </div>
 
-            <p>Priority: {selectedIncident.priority}</p>
-            <p>Status: {selectedIncident.status.replace("_", " ")}</p>
+              <div className="incident-meta-item">
+                <span>Status</span>
+                <strong>
+                  <span className={`status-badge ${selectedIncident.status}`}>
+                    {selectedIncident.status.replace("_", " ")}
+                  </span>
+                </strong>
+              </div>
+
+              <div className="incident-meta-item">
+                <span>Category</span>
+                <strong>{selectedIncident.category}</strong>
+              </div>
+
+              <div className="incident-meta-item">
+                <span>Created On</span>
+                <strong>
+                  {new Date(selectedIncident.createdAt).toLocaleDateString()}
+                </strong>
+              </div>
+
+              <div className="incident-meta-item">
+                <span>Reported By</span>
+                <strong>
+                  {typeof selectedIncident.createdBy === "object"
+                    ? selectedIncident.createdBy?.name
+                    : selectedIncident.createdBy || "Not available"}
+                </strong>
+              </div>
+
+              <div className="incident-meta-item">
+                <span>Assigned To</span>
+                <strong>
+                  {typeof selectedIncident.assignedTo === "object"
+                    ? selectedIncident.assignedTo?.name
+                    : selectedIncident.assignedTo || "Unassigned"}
+                </strong>
+              </div>
+
+              <div className="incident-meta-item">
+                <span>SLA Due Date</span>
+                <strong>
+                  {selectedIncident.dueDate
+                    ? new Date(selectedIncident.dueDate).toLocaleString()
+                    : "Not available"}
+                </strong>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="incident-description">
+              <h3>Description</h3>
+              <p>{selectedIncident.description}</p>
+            </div>
+
+            {/* Status Management */}
             {(currentUser?.role === "admin" ||
               currentUser?.role === "support_agent") && (
-              <div>
-                <label htmlFor="incident-status">Update Status:</label>
+              <div className="incident-description">
+                <h3>Manage Incident Status</h3>
 
                 <select
                   id="incident-status"
@@ -489,80 +698,196 @@ function App() {
                   <option value="resolved">Resolved</option>
                   <option value="closed">Closed</option>
                 </select>
+
                 <button type="button" onClick={handleUpdateStatus}>
                   Save Status
                 </button>
               </div>
             )}
-            <p>Category: {selectedIncident.category}</p>
-            <p>
-              Created: {new Date(selectedIncident.createdAt).toLocaleString()}
-            </p>
 
-            <p>
-              Created By:{" "}
-              {typeof selectedIncident.createdBy === "object"
-                ? selectedIncident.createdBy?.name
-                : selectedIncident.createdBy || "Not available"}
-            </p>
-
-            <p>
-              Assigned To:{" "}
-              {typeof selectedIncident.assignedTo === "object"
-                ? selectedIncident.assignedTo?.name
-                : selectedIncident.assignedTo || "Unassigned"}
-            </p>
-            <div>
-              <h3>Comments</h3>
+            {/* Comments */}
+            <div className="incident-description">
+              <h3>Comments ({comments.length})</h3>
 
               {comments.length === 0 ? (
                 <p>No comments yet.</p>
               ) : (
-                comments.map((comment) => (
-                  <div key={comment._id}>
-                    <strong>{comment.author.name}</strong>
-                    <p>{comment.message}</p>
-                    <small>
-                      {new Date(comment.createdAt).toLocaleString()}
-                    </small>
-                  </div>
-                ))
+                comments.map((comment) => {
+                  const isCommentAuthor =
+                    comment.author._id === currentUser?.userId;
+                  const hasEditHistory = Boolean(comment.editHistory?.length);
+                  const isHistoryExpanded = expandedCommentHistory.includes(
+                    comment._id,
+                  );
+                  const isEditing = editingCommentId === comment._id;
+
+                  return (
+                    <div className="comment-item" key={comment._id}>
+                      <div className="comment-header">
+                        <strong>{comment.author.name}</strong>
+                        <small>
+                          {new Date(comment.createdAt).toLocaleString()}
+                        </small>
+                      </div>
+
+                      {isEditing ? (
+                        <div className="comment-edit-form">
+                          <textarea
+                            value={editedCommentMessage}
+                            onChange={(event) =>
+                              setEditedCommentMessage(event.target.value)
+                            }
+                            rows={3}
+                            autoFocus
+                          />
+                          <div className="comment-edit-actions">
+                            <button
+                              type="button"
+                              className="secondary-button"
+                              onClick={handleCancelEditComment}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              className="primary-button"
+                              onClick={() => handleSaveCommentEdit(comment._id)}
+                              disabled={!editedCommentMessage.trim()}
+                            >
+                              Save Changes
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p>{comment.message}</p>
+                      )}
+
+                      <div className="comment-actions">
+                        {isCommentAuthor && !isEditing && (
+                          <button
+                            type="button"
+                            className="comment-action-button"
+                            onClick={() => handleStartEditComment(comment)}
+                          >
+                            Edit
+                          </button>
+                        )}
+
+                        {hasEditHistory && (
+                          <button
+                            type="button"
+                            className="comment-action-button"
+                            onClick={() =>
+                              handleToggleCommentHistory(comment._id)
+                            }
+                          >
+                            {isHistoryExpanded
+                              ? "Hide history"
+                              : `View history (${comment.editHistory?.length ?? 0})`}
+                          </button>
+                        )}
+                      </div>
+
+                      {hasEditHistory && isHistoryExpanded && (
+                        <div className="comment-history">
+                          <h4>Comment History</h4>
+
+                          <div className="comment-history-item">
+                            <div className="comment-history-header">
+                              <strong>Original</strong>
+                              <span className="comment-history-badge original">
+                                Original
+                              </span>
+                            </div>
+                            <p>{comment.originalMessage || comment.message}</p>
+                            <small>
+                              Posted by {comment.author.name} ·{" "}
+                              {new Date(comment.createdAt).toLocaleString()}
+                            </small>
+                          </div>
+
+                          {comment.editHistory?.map((edit, index) => (
+                            <div
+                              className="comment-history-item"
+                              key={`${comment._id}-${index}`}
+                            >
+                              <div className="comment-history-header">
+                                <strong>Edited</strong>
+                                <span className="comment-history-badge edited">
+                                  Edited
+                                </span>
+                              </div>
+                              <p>{edit.message}</p>
+                              <small>
+                                Edited by{" "}
+                                {edit.editedBy?.name ?? "Unknown user"}
+                                {" · "}
+                                {new Date(edit.editedAt).toLocaleString()}
+                              </small>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
               )}
-              <textarea
-                placeholder="Write your comment..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-              />
-              <button
-                className="primary-button"
-                onClick={handleAddComment}
-                disabled={!newComment.trim()}
-              >
-                Post Comment
-              </button>
+
+              <div className="comment-form">
+                <textarea
+                  placeholder="Write a comment or share an update..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  rows={3}
+                />
+
+                <div className="comment-form-footer">
+                  <span>Keep your team informed with updates.</span>
+
+                  <button
+                    className="primary-button"
+                    onClick={handleAddComment}
+                    disabled={!newComment.trim()}
+                  >
+                    Post Comment
+                  </button>
+                </div>
+              </div>
             </div>
-            {/* Audit History Section */}
-            <div>
-              <h3>Activity History</h3>
+
+            {/* Activity History */}
+            <div className="incident-description">
+              <h3>Activity History ({auditLogs.length})</h3>
 
               {auditLogs.length === 0 ? (
                 <p>No activity recorded yet.</p>
               ) : (
                 auditLogs.map((log) => (
-                  <div key={log._id}>
-                    <strong>{log.performedBy.name}</strong>
-                    <p>{log.details}</p>
-                    <small>
-                      {log.action.replace("_", " ")} ·{" "}
-                      {new Date(log.createdAt).toLocaleString()}
-                    </small>
+                  <div className="activity-item" key={log._id}>
+                    <div className="activity-dot"></div>
+
+                    <div className="activity-content">
+                      <div className="activity-header">
+                        <strong>{log.performedBy.name}</strong>
+                        <small>
+                          {new Date(log.createdAt).toLocaleString()}
+                        </small>
+                      </div>
+
+                      <p>{log.details}</p>
+
+                      <span className="activity-action">
+                        {log.action.replace("_", " ")}
+                      </span>
+                    </div>
                   </div>
                 ))
               )}
             </div>
           </section>
         )}
-        {activePage === "dashboard" && (
+
+        {!selectedIncident && activePage === "dashboard" && (
           <>
             {showIncidentForm && (
               <section className="content-card">
@@ -783,7 +1108,7 @@ function App() {
           </>
         )}
 
-        {activePage === "incidents" && (
+        {!selectedIncident && activePage === "incidents" && (
           <section className="content-card">
             <div className="section-heading">
               <div>
@@ -844,7 +1169,72 @@ function App() {
             )}
           </section>
         )}
+        {activePage === "overdue" && (
+          <section className="content-card">
+            <div className="section-heading">
+              <div>
+                <h2>Overdue Incidents</h2>
+                <p>Track incidents that have exceeded their SLA deadline.</p>
+              </div>
+              <span>{overdueIncidents.length} overdue</span>
+            </div>
 
+            {overdueIncidents.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">✓</div>
+                <h3>No overdue incidents</h3>
+                <p>
+                  Great! There are no overdue incidents assigned to you or
+                  reported by you.
+                </p>
+              </div>
+            ) : (
+              <div className="incident-table-wrapper">
+                <table className="incident-table">
+                  <thead>
+                    <tr>
+                      <th>Incident</th>
+                      <th>Priority</th>
+                      <th>Status</th>
+                      <th>Due Date</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {overdueIncidents.map((incident) => (
+                      <tr
+                        key={incident._id}
+                        onClick={() => handleIncidentClick(incident._id)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <td>
+                          <strong>{incident.title}</strong>
+                        </td>
+                        <td>
+                          <span
+                            className={`priority-badge ${incident.priority}`}
+                          >
+                            {incident.priority}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`status-badge ${incident.status}`}>
+                            {incident.status.replace("_", " ")}
+                          </span>
+                        </td>
+                        <td>
+                          {incident.dueDate
+                            ? new Date(incident.dueDate).toLocaleString()
+                            : "N/A"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        )}
         {activePage === "assignments" && (
           <section className="content-card">
             <div className="section-heading">

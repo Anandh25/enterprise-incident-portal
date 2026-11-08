@@ -3,7 +3,12 @@ import AuditLog from "../models/AuditLog";
 const createAuditLog = async (
   incidentId: string,
   performedBy: string,
-  action: "created" | "status_updated" | "assigned" | "comment_added",
+  action:
+    | "created"
+    | "status_updated"
+    | "assigned"
+    | "comment_added"
+    | "comment_edited",
   details: string,
 ) => {
   const auditLog = await AuditLog.create({
