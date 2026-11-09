@@ -4,7 +4,7 @@ import { Eye, EyeOff } from "lucide-react";
 import "./AuthPage.css";
 import toast from "react-hot-toast";
 
-const API_URL = "http://localhost:5000/api/auth";
+const API_URL = "https://enterprise-incident-portal.onrender.com/api/auth";
 
 type AuthPageProps = {
   onLoginSuccess: () => void;

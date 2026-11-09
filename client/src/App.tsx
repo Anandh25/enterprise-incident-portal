@@ -138,7 +138,7 @@ function App() {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `http://localhost:5000/api/incidents/${incidentId}`,
+        `https://enterprise-incident-portal.onrender.com/api/incidents/${incidentId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -148,7 +148,7 @@ function App() {
       console.log("Incident details:", response.data.data);
       setSelectedIncident(response.data.data);
       const commentsResponse = await axios.get(
-        `http://localhost:5000/api/incidents/${incidentId}/comments`,
+        `https://enterprise-incident-portal.onrender.com/api/incidents/${incidentId}/comments`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -157,7 +157,7 @@ function App() {
       );
       setComments(commentsResponse.data.data);
       const auditResponse = await axios.get(
-        `http://localhost:5000/api/incidents/${incidentId}/audit-logs`,
+        `https://enterprise-incident-portal.onrender.com/api/incidents/${incidentId}/audit-logs`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -180,7 +180,7 @@ function App() {
       }
 
       await axios.post(
-        `http://localhost:5000/api/incidents/${selectedIncident._id}/comments`,
+        `https://enterprise-incident-portal.onrender.com/api/incidents/${selectedIncident._id}/comments`,
         {
           message: newComment.trim(),
         },
@@ -192,7 +192,7 @@ function App() {
       );
 
       const response = await axios.get(
-        `http://localhost:5000/api/incidents/${selectedIncident._id}/comments`,
+        `https://enterprise-incident-portal.onrender.com/api/incidents/${selectedIncident._id}/comments`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -236,7 +236,7 @@ function App() {
       }
 
       await axios.patch(
-        `http://localhost:5000/api/incidents/${selectedIncident._id}/comments/${commentId}`,
+        `https://enterprise-incident-portal.onrender.com/api/incidents/${selectedIncident._id}/comments/${commentId}`,
         { message: editedCommentMessage.trim() },
         {
           headers: {
@@ -247,13 +247,13 @@ function App() {
 
       const [commentsResponse, auditResponse] = await Promise.all([
         axios.get(
-          `http://localhost:5000/api/incidents/${selectedIncident._id}/comments`,
+          `https://enterprise-incident-portal.onrender.com/api/incidents/${selectedIncident._id}/comments`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
         ),
         axios.get(
-          `http://localhost:5000/api/incidents/${selectedIncident._id}/audit-logs`,
+          `https://enterprise-incident-portal.onrender.com/api/incidents/${selectedIncident._id}/audit-logs`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -286,7 +286,7 @@ function App() {
       }
 
       const response = await axios.patch(
-        `http://localhost:5000/api/incidents/${selectedIncident._id}`,
+        `https://enterprise-incident-portal.onrender.com/api/incidents/${selectedIncident._id}`,
         { status: selectedIncident.status },
         {
           headers: {
@@ -298,7 +298,7 @@ function App() {
       setSelectedIncident(response.data.data);
 
       const auditResponse = await axios.get(
-        `http://localhost:5000/api/incidents/${selectedIncident._id}/audit-logs`,
+        `https://enterprise-incident-portal.onrender.com/api/incidents/${selectedIncident._id}/audit-logs`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -338,7 +338,7 @@ function App() {
       }
 
       await axios.post(
-        "http://localhost:5000/api/incidents",
+        "https://enterprise-incident-portal.onrender.com/api/incidents",
         {
           title: title.trim(),
           description: description.trim(),
@@ -360,12 +360,18 @@ function App() {
 
       // Refresh dashboard data after creating the incident.
       const [summaryResponse, incidentsResponse] = await Promise.all([
-        axios.get("http://localhost:5000/api/incidents/dashboard/summary", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get("http://localhost:5000/api/incidents?limit=100", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+        axios.get(
+          "https://enterprise-incident-portal.onrender.com/api/incidents/dashboard/summary",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        ),
+        axios.get(
+          "https://enterprise-incident-portal.onrender.com/api/incidents?limit=100",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        ),
       ]);
 
       setSummary(summaryResponse.data.data);
@@ -393,7 +399,7 @@ function App() {
       }
 
       const userResponse = await axios.get(
-        "http://localhost:5000/api/auth/me",
+        "https://enterprise-incident-portal.onrender.com/api/auth/me",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -404,7 +410,7 @@ function App() {
       setCurrentUser(userResponse.data.data);
 
       const response = await axios.get(
-        "http://localhost:5000/api/incidents/dashboard/summary",
+        "https://enterprise-incident-portal.onrender.com/api/incidents/dashboard/summary",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -414,7 +420,7 @@ function App() {
 
       setSummary(response.data.data);
       const overdueResponse = await axios.get(
-        "http://localhost:5000/api/incidents/overdue",
+        "https://enterprise-incident-portal.onrender.com/api/incidents/overdue",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -424,7 +430,7 @@ function App() {
 
       setOverdueIncidents(overdueResponse.data.data);
       const incidentsResponse = await axios.get(
-        "http://localhost:5000/api/incidents?limit=100",
+        "https://enterprise-incident-portal.onrender.com/api/incidents?limit=100",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -437,7 +443,7 @@ function App() {
         userResponse.data.data.role === "admin"
       ) {
         const assignmentsResponse = await axios.get(
-          "http://localhost:5000/api/incidents/my-assignments",
+          "https://enterprise-incident-portal.onrender.com/api/incidents/my-assignments",
           {
             headers: {
               Authorization: `Bearer ${token}`,
