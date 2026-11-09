@@ -1,6 +1,5 @@
 import dotenv from "dotenv";
 dotenv.config();
-console.log("JWT Secret loaded:", Boolean(process.env.JWT_SECRET));
 
 import app from "./app";
 import connectDB from "./config/db";
